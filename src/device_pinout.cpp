@@ -39,14 +39,14 @@
 ***********************************************************************************************************************/
 
 // Carrier Board standard pins
-const pin_t TMP36_SENSE_PIN   = A4;
+const pin_t INTERNAL_TEMP_PIN   = A4;
 const pin_t BUTTON_PIN        = D4;
 const pin_t BLUE_LED          = D7;
 const pin_t WAKEUP_PIN        = D8;
 
 // Sensor specific Pins
 extern const pin_t DISTANCE_PIN = A1;                   // May need to change this
-extern const pin_t MODULE_POWER_PIN = A2;          // Make sure we document this above
+extern const pin_t EXTERNAL_TEMP_PIN = A2;          // External temp sensor
 const pin_t LED_POWER_PIN = A3;                    // Not use for this sketch
 
 bool initializePinModes() {
@@ -56,21 +56,11 @@ bool initializePinModes() {
     pinMode(WAKEUP_PIN,INPUT);                      // This pin is active HIGH
     pinMode(BLUE_LED,OUTPUT);                       // On the Boron itself
     pinMode(DISTANCE_PIN, INPUT);
-    pinMode(MODULE_POWER_PIN, OUTPUT);
+    pinMode(EXTERNAL_TEMP_PIN, INPUT);
     pinMode(LED_POWER_PIN,OUTPUT);
-
-    //digitalWrite(MODULE_POWER_PIN,false);
-    //digitalWrite(LED_POWER_PIN,LOW);
 
     return true;
 }
-
-void sensorControl(bool enableSensor) { // Powers up the sensor
-
-    if (enableSensor) digitalWrite(MODULE_POWER_PIN,true);          // Enables the sensor (active high)
-    else digitalWrite(MODULE_POWER_PIN,false);                      // Disables the sensor (active high)
-}
-
 
 bool initializePowerCfg() {
     Log.info("Initializing Power Config");

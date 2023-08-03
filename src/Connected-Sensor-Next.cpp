@@ -1,6 +1,6 @@
 /*
  * Project LoRA-Particle-Node - basic example of a remote counter
- * Description: Sends data via cellular on an hourly basis
+ * Description: Sends data via cellular on an hourly basis - For Ultrasonic Distance Sensor (MB7092)
  * Author: Chip McClelland
  * Date: 1-31-23
  */
@@ -9,6 +9,7 @@
 // v0.01 - In this version, I will make a simple counter without carrier board dependencies
 // v1.00 - Working on improving battery level reporting
 // v1.01 - Adapted this code for measuring distance using a Maxbotix MB7092 Analog sensor
+// v1.02 - Added temperature compensation for the distance sensor
 // 
 
 // Particle Libraries
@@ -22,7 +23,7 @@
 #include "MyPersistentData.h"						// Persistent Storage
 #include "Particle_Functions.h"						// Where we put all the functions specific to Particle
 
-char currentPointRelease[6] ="1.00";
+char currentPointRelease[6] ="1.02";
 PRODUCT_VERSION(1);									// For now, we are putting nodes and gateways in the same product group - need to deconflict #
 
 // Prototype functions
@@ -34,9 +35,6 @@ void UbidotsHandler(const char *event, const char *data);
 bool isParkOpen();									// Simple function returns whether park is open or not
 void dailyCleanup();								// Reset each morning
 void softDelay(uint32_t t);
-
-// Timer to make the Blue LED visable
-Timer countSignalTimer(1000, countSignalTimerISR, true);      // This is how we will ensure the BlueLED stays on long enough for folks to see it.
 
 // System Health Variables
 int outOfMemory = -1;                               // From reference code provided in AN0023 (see above)
@@ -55,8 +53,8 @@ AB1805 ab1805(Wire);                                // Rickkas' RTC / Watchdog l
 
 // Program Variables
 volatile bool userSwitchDectected = false;		
-volatile bool sensorDetect = false;
-bool dataInFlight = false;                          // Tracks if we have sent data but not yet received a response
+volatile bool sensorDetect = false;					// Flag for sensor interrupt
+bool dataInFlight = false;                          // Flag for whether we are waiting for a response from the webhook
 
 // Timing variables
 const int wakeBoundary = 1*3600 + 0*60 + 0;         // Sets a reporting frequency of 1 hour 0 minutes 0 seconds
@@ -96,8 +94,9 @@ void setup() {
 
   	takeMeasurements();                             // Populates values so you can read them before the hour
 
-	if (!digitalRead(BTN)) {						// The user will press this button at startup to reset settings
+	if (!digitalRead(BUTTON_PIN)) {						// The user will press this button at startup to reset settings
 		Log.info("User button pressed at startup - setting defaults");
+		state = CONNECTING_STATE;
 		sysStatus.initialize();                  	// Make sure the device wakes up and connects - reset to defaults and exit low power mode
 	}
 
@@ -133,7 +132,6 @@ void loop() {
 
 		case SLEEPING_STATE: {
 			if (state != oldState) publishStateTransition();              	// We will apply the back-offs before sending to ERROR state - so if we are here we will take action
-			if (sensorDetect || countSignalTimer.isActive())  break;           // Don't nap until we are done with event - exits back to main loop but stays in napping state
 			if (Particle.connected() || !Cellular.isOff()) {
 				if (!Particle_Functions::instance().disconnectFromParticle()) {                                 // Disconnect cleanly from Particle and power down the modem
 					state = ERROR_STATE;
@@ -143,12 +141,12 @@ void loop() {
 			}
 			int wakeInSeconds = constrain(wakeBoundary - Time.now() % wakeBoundary, 1, wakeBoundary) + 1;;	// Figure out how long to sleep 		
 			config.mode(SystemSleepMode::ULTRA_LOW_POWER)
-				.gpio(BTN,FALLING)
+				.gpio(BUTTON_PIN,CHANGE)
 				.duration(wakeInSeconds * 1000L);
 			ab1805.stopWDT();  												   // No watchdogs interrupting our slumber
 			SystemSleepResult result = System.sleep(config);              	// Put the device to sleep device continues operations from here
 			ab1805.resumeWDT();                                                // Wakey Wakey - WDT can resume
-			if (result.wakeupPin() == BTN) {                         // If the user woke the device we need to get up - device was sleeping so we need to reset opening hours
+			if (result.wakeupPin() == BUTTON_PIN) {                         // If the user woke the device we need to get up - device was sleeping so we need to reset opening hours
 				Log.info("Woke with user button - Resetting hours and going to connect");
 				sysStatus.set_lowPowerMode(false);
 				sysStatus.set_closeTime(24);
@@ -207,15 +205,15 @@ void loop() {
       			dataInFlight = true;                                             // set the data inflight flag
       			publishStateTransition();
     		}
+
     		if (!dataInFlight)  {                                              // Response received --> back to IDLE state
-		// debug code
-		stayAwake = stayAwakeLong;
-		stayAwakeTimeStamp = millis();
-		sysStatus.set_lowPowerMode(true);
+				stayAwake = stayAwakeLong;
+				stayAwakeTimeStamp = millis();
+				// sysStatus.set_lowPowerMode(true);
       			state = IDLE_STATE;
     		}
     		else if (millis() - webhookTimeStamp > webhookWait) {              // If it takes too long - will need to reset
-				// Add alert here
+				Log.info("Webhook timeout - resetting");
       			state = ERROR_STATE;                                             // Go to the ERROR state to decide our fate
     		}
   		} break;
@@ -252,9 +250,11 @@ void loop() {
 		} break;
 
 		case ERROR_STATE: {													// Where we go if things are not quite right
-			if (state != oldState) publishStateTransition();                // We will apply the back-offs before sending to ERROR state - so if we are here we will take action
+			if (state != oldState) {
+				publishStateTransition();                // We will apply the back-offs before sending to ERROR state - so if we are here we will take action
+				Log.info("Error state - resetting");
+			}
 			static unsigned long resetTimer = millis();
-
 			if (millis() - resetTimer > resetWait) System.reset();
 
 		} break;
@@ -327,8 +327,8 @@ void UbidotsHandler(const char *event, const char *data) {            // Looks a
   }
   else if (atoi(data) == 200 || atoi(data) == 201) {
     snprintf(responseString, sizeof(responseString),"Response Received");
+	dataInFlight = false;											 // We have received a response - so we can send another
     sysStatus.set_lastHookResponse(Time.now());                          // Record the last successful Webhook Response
-    dataInFlight = false;                                             // Data has been received
   }
   else {
     snprintf(responseString, sizeof(responseString), "Unknown response recevied %i",atoi(data));
@@ -336,6 +336,7 @@ void UbidotsHandler(const char *event, const char *data) {            // Looks a
   if (sysStatus.get_verboseMode() && Particle.connected()) {
     Particle.publish("Ubidots Hook", responseString, PRIVATE);
   }
+  Log.info(responseString);
 }
 
 /**

@@ -276,7 +276,8 @@ public:
 		uint16_t distance;                             // distance in cm
 		time_t lastCountTime;
 		float internalTempC;                            // Enclosure temperature in degrees C
-		uint8_t alertCode;										// Current Alert Code
+		float externalTempC;							// Temp Sensor at the ultrasonic device
+		uint8_t alertCode;								// Current Alert Code
 		time_t lastAlertTime;
 		float stateOfCharge;                                // Battery charge level
 		uint8_t batteryState;                             // Stores the current battery state
@@ -313,8 +314,11 @@ public:
 	time_t get_lastCountTime() const;
 	void set_lastCountTime(time_t value);
 
-	uint8_t get_internalTempC() const ;
-	void set_internalTempC(uint8_t value);
+	float get_internalTempC() const ;
+	void set_internalTempC(float value);
+
+	float get_externalTempC() const ;
+	void set_externalTempC(float value);
 
 	int8_t get_alertCode() const;
 	void set_alertCode(int8_t value);

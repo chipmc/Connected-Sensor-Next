@@ -14,14 +14,14 @@
 extern const pin_t BUTTON_PIN;
 extern const pin_t BLUE_LED;
 extern const pin_t WAKEUP_PIN;   
-extern const pin_t TMP36_SENSE_PIN;
+extern const pin_t INTERNAL_TEMP_PIN;
 
 // Specific to the sensor
 extern const pin_t DISTANCE_PIN;
 extern const pin_t MODULE_POWER_PIN;
+extern const pin_t EXTERNAL_TEMP_PIN;
 
 bool initializePinModes();
 bool initializePowerCfg();
-void sensorControl(bool enableSensor);
 
 #endif

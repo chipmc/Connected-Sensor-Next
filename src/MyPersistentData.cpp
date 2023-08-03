@@ -262,12 +262,20 @@ void currentStatusData::set_lastCountTime(time_t value) {
     setValue<time_t>(offsetof(CurrentData, lastCountTime), value);
 }
 
-uint8_t currentStatusData::get_internalTempC() const {
-    return getValue<uint8_t>(offsetof(CurrentData, internalTempC));
+float currentStatusData::get_internalTempC() const {
+    return getValue<float>(offsetof(CurrentData, internalTempC));
 }
 
-void currentStatusData::set_internalTempC(uint8_t value) {
-    setValue<uint8_t>(offsetof(CurrentData, internalTempC), value);
+void currentStatusData::set_internalTempC(float value) {
+    setValue<float>(offsetof(CurrentData, internalTempC), value);
+}
+
+float currentStatusData::get_externalTempC() const {
+    return getValue<float>(offsetof(CurrentData, externalTempC));
+}
+
+void currentStatusData::set_externalTempC(float value) {
+    setValue<float>(offsetof(CurrentData, externalTempC), value);
 }
 
 int8_t currentStatusData::get_alertCode() const {

@@ -67,4 +67,12 @@ bool isItSafeToCharge();                               // See if it is safe to c
  */
 void getSignalStrength();
 
+/**
+ * @brief Get the Temperature value from the TMP-36 sensor
+ * 
+ * @details This function will get the temperature from the TMP-36 sensor and make sure that it is a valid value
+ * 
+*/
+float getTemperature(int reading);                               // Get temperature and make sure we are not getting a spurrious value
+
 #endif

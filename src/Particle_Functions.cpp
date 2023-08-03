@@ -105,7 +105,7 @@ int Particle_Functions::jsonFunctionParser(String command) {
       // Format - function - status, variables - short, long
       // Test - {"cmd":[{"var":"short", "fn":"status"}]}
       takeMeasurements();
-      snprintf(data, sizeof(data),"Distance: %d, Sensor: %s, Battery: %4.2f and %s",current.get_distance(), (!sysStatus.get_sensorType()) ? "Car" : "Trail", current.get_stateOfCharge(), batteryContext[current.get_batteryState()]);
+      snprintf(data, sizeof(data),"Distance: %d, Sensor: %s, Battery: %4.2f and %s",current.get_distance(), (sysStatus.get_sensorType()) ? "Level" : "Trail", current.get_stateOfCharge(), batteryContext[current.get_batteryState()]);
       Log.info(data);
       Particle.publish("status",data,PRIVATE);
       if (variable == "long") {
@@ -209,8 +209,8 @@ void Particle_Functions::sendEvent() {
   unsigned long timeStampValue;                                       // Going to start sending timestamps - and will modify for midnight to fix reporting issue
   timeStampValue = Time.now();                                        // Set the timestamp (may need to adjust for midnight)
 
-  snprintf(data, sizeof(data), "{\"distance\":%i, \"battery\":%4.2f,\"key1\":\"%s\",\"resets\":%i, \"alerts\":%i,\"connecttime\":%i,\"timestamp\":%lu000}",current.get_distance(), current.get_stateOfCharge(), batteryContext[current.get_batteryState()],sysStatus.get_resetCount(), current.get_alertCode(), sysStatus.get_lastConnectionDuration(), timeStampValue);
-  PublishQueuePosix::instance().publish("Ubidots-Sensor-Hook-v1", data, PRIVATE | WITH_ACK);
+  snprintf(data, sizeof(data), "{\"distance\":%i, \"battery\":%4.2f,\"key1\":\"%s\", \"temp\":%4.2f, \"resets\":%i, \"alerts\":%i,\"connecttime\":%i,\"timestamp\":%lu000}",current.get_distance(), current.get_stateOfCharge(), batteryContext[current.get_batteryState()],current.get_internalTempC(), sysStatus.get_resetCount(), current.get_alertCode(), sysStatus.get_lastConnectionDuration(), timeStampValue);
+  PublishQueuePosix::instance().publish("Ubidots_Level_Hook_v1", data, PRIVATE | WITH_ACK);
   Log.info("Ubidots Webhook: %s", data);                              // For monitoring via serial
   current.set_alertCode(0);                                                 // Reset the alert after publish
 }
