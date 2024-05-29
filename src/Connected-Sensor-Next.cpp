@@ -10,6 +10,7 @@
 // v1.00 - Working on improving battery level reporting
 // v1.01 - Adapted this code for measuring distance using a Maxbotix MB7092 Analog sensor
 // v1.02 - Added temperature compensation for the distance sensor
+// v1.03 - Updated to new deviceOS@6.1.0
 // 
 
 // Particle Libraries
