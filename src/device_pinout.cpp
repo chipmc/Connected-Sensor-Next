@@ -45,14 +45,14 @@ const pin_t BLUE_LED          = D7;
 const pin_t WAKEUP_PIN        = D8;
 
 // Sensor specific Pins
-extern const pin_t DISTANCE_PIN = A1;                   // May need to change this
-extern const pin_t EXTERNAL_TEMP_PIN = A2;          // External temp sensor
-const pin_t LED_POWER_PIN = A3;                    // Not use for this sketch
+extern const pin_t DISTANCE_PIN = A1;                // May need to change this
+extern const pin_t EXTERNAL_TEMP_PIN = A2;           // External temp sensor
+const pin_t LED_POWER_PIN = A3;                      // Not use for this sketch
 
 bool initializePinModes() {
     Log.info("Initalizing the pinModes");
     // Define as inputs or outputs
-    pinMode(BUTTON_PIN,INPUT_PULLUP);               // User button on the carrier board - active LOW
+    pinMode(BUTTON_PIN,INPUT);                      // User button on the carrier board - active LOW
     pinMode(WAKEUP_PIN,INPUT);                      // This pin is active HIGH
     pinMode(BLUE_LED,OUTPUT);                       // On the Boron itself
     pinMode(DISTANCE_PIN, INPUT);

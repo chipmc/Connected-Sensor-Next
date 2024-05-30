@@ -13,6 +13,7 @@
 // v1.03 - Updated to new deviceOS@6.1.0
 // v1.04 - Changed the behaviour for the user button - will force sending data to Particle
 // v1.05 - Changed button behaviour to force a connection to Particle
+// v2.00 - Changed version so we can confirm that the correct version is applied.
 
 // Particle Libraries
 #include "Particle.h"                              // Because it is a CPP file not INO
@@ -25,8 +26,8 @@
 #include "MyPersistentData.h"						// Persistent Storage
 #include "Particle_Functions.h"						// Where we put all the functions specific to Particle
 
-char currentPointRelease[6] ="1.05";
-PRODUCT_VERSION(1);									// For now, we are putting nodes and gateways in the same product group - need to deconflict #
+char currentPointRelease[6] ="2.00";
+PRODUCT_VERSION(2);									// For now, we are putting nodes and gateways in the same product group - need to deconflict #
 
 // Prototype functions
 void publishStateTransition(void);                  // Keeps track of state machine changes - for debugging
@@ -153,6 +154,7 @@ void loop() {
 				sysStatus.set_lowPowerMode(false);
 				// sysStatus.set_closeTime(24);								// Not sure we want to reset the open / close time
 				// sysStatus.set_openTime(0);
+				userSwitchDectected = false;
 				stayAwake = stayAwakeLong;
 				stayAwakeTimeStamp = millis();
 				state = REPORTING_STATE;
