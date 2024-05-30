@@ -12,7 +12,7 @@
 // v1.02 - Added temperature compensation for the distance sensor
 // v1.03 - Updated to new deviceOS@6.1.0
 // v1.04 - Changed the behaviour for the user button - will force sending data to Particle
-// 
+// v1.05 - Changed button behaviour to force a connection to Particle
 
 // Particle Libraries
 #include "Particle.h"                              // Because it is a CPP file not INO
@@ -25,7 +25,7 @@
 #include "MyPersistentData.h"						// Persistent Storage
 #include "Particle_Functions.h"						// Where we put all the functions specific to Particle
 
-char currentPointRelease[6] ="1.04";
+char currentPointRelease[6] ="1.05";
 PRODUCT_VERSION(1);									// For now, we are putting nodes and gateways in the same product group - need to deconflict #
 
 // Prototype functions
@@ -117,7 +117,7 @@ void setup() {
 	LocalTime::instance().withConfig(LocalTimePosixTimezone("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));			// East coast of the US
 	conv.withCurrentTime().convert();  	
   
-	attachInterrupt(BUTTON_PIN,userSwitchISR,CHANGE); 							// We may need to monitor the user switch to change behaviours / modes
+	attachInterrupt(BUTTON_PIN,userSwitchISR,FALLING);						// We may need to monitor the user switch to change behaviours / modes
 
 	if (state == INITIALIZATION_STATE) state = SLEEPING_STATE;               	// Sleep unless otherwise from above code
   	Log.info("Startup complete with last connect %s", Time.format(sysStatus.get_lastConnection(), "%T").c_str());
