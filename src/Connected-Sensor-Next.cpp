@@ -11,6 +11,7 @@
 // v1.01 - Adapted this code for measuring distance using a Maxbotix MB7092 Analog sensor
 // v1.02 - Added temperature compensation for the distance sensor
 // v1.03 - Updated to new deviceOS@6.1.0
+// v1.04 - Changed the behaviour for the user button - will force sending data to Particle
 // 
 
 // Particle Libraries
@@ -24,7 +25,7 @@
 #include "MyPersistentData.h"						// Persistent Storage
 #include "Particle_Functions.h"						// Where we put all the functions specific to Particle
 
-char currentPointRelease[6] ="1.02";
+char currentPointRelease[6] ="1.04";
 PRODUCT_VERSION(1);									// For now, we are putting nodes and gateways in the same product group - need to deconflict #
 
 // Prototype functions
@@ -116,7 +117,7 @@ void setup() {
 	LocalTime::instance().withConfig(LocalTimePosixTimezone("EST5EDT,M3.2.0/2:00:00,M11.1.0/2:00:00"));			// East coast of the US
 	conv.withCurrentTime().convert();  	
   
-	attachInterrupt(BUTTON_PIN,userSwitchISR,CHANGE); // We may need to monitor the user switch to change behaviours / modes
+	attachInterrupt(BUTTON_PIN,userSwitchISR,CHANGE); 							// We may need to monitor the user switch to change behaviours / modes
 
 	if (state == INITIALIZATION_STATE) state = SLEEPING_STATE;               	// Sleep unless otherwise from above code
   	Log.info("Startup complete with last connect %s", Time.format(sysStatus.get_lastConnection(), "%T").c_str());
@@ -150,11 +151,11 @@ void loop() {
 			if (result.wakeupPin() == BUTTON_PIN) {                         // If the user woke the device we need to get up - device was sleeping so we need to reset opening hours
 				Log.info("Woke with user button - Resetting hours and going to connect");
 				sysStatus.set_lowPowerMode(false);
-				sysStatus.set_closeTime(24);
-				sysStatus.set_openTime(0);
+				// sysStatus.set_closeTime(24);								// Not sure we want to reset the open / close time
+				// sysStatus.set_openTime(0);
 				stayAwake = stayAwakeLong;
 				stayAwakeTimeStamp = millis();
-				state = CONNECTING_STATE;
+				state = REPORTING_STATE;
 			}
 			else {															// In this state the device was awoken for hourly reporting
 				softDelay(2000);											// Gives the device a couple seconds to get the battery reading
@@ -173,7 +174,7 @@ void loop() {
 
 			// Let's see if we need to connect 
 			if (Particle.connected()) {                                        // We are already connected go to response wait
-				stayAwake = stayAwakeLong;                                       // Keeps device awake after reboot - helps with recovery
+				stayAwake = stayAwakeLong;                                      // Keeps device awake after reboot - helps with recovery
 				stayAwakeTimeStamp = millis();
 				state = RESP_WAIT_STATE;
 			}
@@ -261,7 +262,7 @@ void loop() {
 		} break;
 	}
 
-	ab1805.loop();                                  // Keeps the RTC synchronized with the Boron's clock
+	ab1805.loop();                                  					// Keeps the RTC synchronized with the Boron's clock
 
 	// Housekeeping for each transit of the main loop
 	current.loop();
@@ -273,6 +274,12 @@ void loop() {
 		Log.info("Resetting due to low memory");
 		state = ERROR_STATE;
   	}
+
+	if (userSwitchDectected) {                      // If the user switch is pressed - we will force a connection
+		Log.info("User switch pressed - sending data");
+		userSwitchDectected = false;
+		state = REPORTING_STATE;
+	}
 }
 
 /**
